@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Чат WebSocket Test</title>
+    <!-- Подключаем библиотеки SockJS и STOMP -->
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+</head>
+<body>
+
+<div>
+    <button id="connectBtn" onclick="connect()">Подключиться к чату</button>
+    <button id="disconnectBtn" onclick="disconnect()" disabled>Отключиться</button>
+</div>
+<br>
+<div>
+    <input type="text" id="messageInput" placeholder="Введите сообщение...">
+    <button id="sendBtn" onclick="sendMessage()" disabled>Отправить</button>
+</div>
+
+<h3>Сообщения:</h3>
+<ul id="messagesList"></ul>
+
+<script>
+    let stompClient = null;
+
+    // Функция подключения
+    function connect() {
+        // Указываем тот самый эндпоинт из WebSocketConfig
+        let socket = new SockJS('/gs-guide-websocket');
+        stompClient = Stomp.over(socket);
+
+        stompClient.connect({}, function (frame) {
+            console.log('Успешно подключено: ' + frame);
+
+            // Включаем кнопки
+            document.getElementById('connectBtn').disabled = true;
+            document.getElementById('disconnectBtn').disabled = false;
+            document.getElementById('sendBtn').disabled = false;
+
+            // ПОДПИСЫВАЕМСЯ на топик из ChatController (@SendTo)
+            stompClient.subscribe('/topic/greetings', function (response) {
+                // Когда приходит сообщение, добавляем его в список на экране
+                showMessageOnScreen(response.body);
+            });
+        });
+    }
+
+    // Функция отправки сообщения
+    function sendMessage() {
+        let text = document.getElementById('messageInput').value;
+        // ОТПРАВЛЯЕМ на маршрут из ChatController (@MessageMapping + префикс /app)
+        stompClient.send("/app/hello", {}, text);
+        document.getElementById('messageInput').value = ''; // очищаем поле
+    }
+
+    // Функция отключения
+    function disconnect() {
+        if (stompClient !== null) {
+            stompClient.disconnect();
+        }
+        document.getElementById('connectBtn').disabled = false;
+        document.getElementById('disconnectBtn').disabled = true;
+        document.getElementById('sendBtn').disabled = true;
+        console.log("Отключено");
+    }
+
+    // Вспомогательная функция для вывода текста на экран
+    function showMessageOnScreen(message) {
+        let ul = document.getElementById('messagesList');
+        let li = document.createElement('li');
+        li.appendChild(document.createTextNode(message));
+        ul.appendChild(li);
+    }
+</script>
+
+</body>
+</html>
