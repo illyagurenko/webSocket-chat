@@ -8,7 +8,6 @@ import org.springframework.stereotype.Controller;
 // обрабатывает запросы
 @Controller
 public class ChatController {
-
     // указание эндпоинта
     @MessageMapping("/hello")
     // разошлет всем кто подписан на данную тему
